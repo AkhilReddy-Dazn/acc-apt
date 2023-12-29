@@ -1,0 +1,32 @@
+{
+  "name": "apt-frontend",
+  "description": "Ad Preview Tool module for the DAZN ACC",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "dev": "node index.js",
+    "build": "rm -rf dist && NODE_ENV=production webpack"
+  },
+  "engines": {
+    "node": "16.15.1"
+  },
+  "browserslist": [
+    "extends @dazn/browserslist-config-acc"
+  ],
+  "dependencies": {
+    "@babel/preset-react": "^7.23.3",
+    "single-spa-react": "2.14.0"
+  },
+  "devDependencies": {
+    "@babel/core": "7.18.13",
+    "@babel/preset-env": "7.16.11",
+    "@dazn/acc-portal": "4.0.1",
+    "@dazn/browserslist-config-acc": "^2.2.0",
+    "babel-loader": "8.2.5",
+    "core-js": "3.6.5",
+    "webpack": "5.69.1",
+    "webpack-cli": "4.9.2"
+  }
+}

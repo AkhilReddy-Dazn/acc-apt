@@ -1,0 +1,123 @@
+name: Portal Deploy
+
+env: 
+  DEV_ROLE: arn:aws:iam::408882511473:role/automation-gha-ci
+  TEST_ROLE: arn:aws:iam::734590493808:role/automation-gha-ci
+  STAGE_ROLE: arn:aws:iam::240680620468:role/automation-gha-ci
+  PROD_ROLE: arn:aws:iam::480309102926:role/automation-gha-ci
+
+on: 
+  workflow_dispatch #see https://docs.github.com/en/actions/reference/events-that-trigger-workflows
+    
+jobs:
+  build-frontend:
+    runs-on: ubuntu-20.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: master
+      - name: add private registry
+        run: npm config set @dazn:registry https://npm.daznplatform.com
+      - name: auth private registry
+        run: npm config set //npm.daznplatform.com/:_authToken ${{ secrets.GLOBAL_JFROG_ARTIFACTORY_TOKEN }}
+      - name: install dependencies
+        run: yarn install
+      - name: build frontend artifact
+        run: yarn build
+      - name: Archive artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: dist-${{ github.run_number }}
+          path: dist
+          retention-days: 1
+        
+
+  deploy-frontend-dev:
+    runs-on: ubuntu-20.04
+    timeout-minutes: 10
+    needs: build-frontend
+    steps: 
+      - name: assume push dev artifacts role
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+          role-to-assume: ${{ env.DEV_ROLE }}
+      - name: Retrieve artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: dist-${{ github.run_number }}
+          path: dist
+      - name: deploy dev frontend artifact
+        run: |
+          aws s3 sync dist s3://408882511473-euc1-frontend-assets/assets/modules/apt-frontend --delete --cache-control max-age=10
+          aws s3 sync dist s3://408882511473-use1-frontend-assets/assets/modules/apt-frontend --delete --cache-control max-age=10
+
+  deploy-frontend-test:
+    runs-on: ubuntu-20.04
+    timeout-minutes: 10
+    needs: build-frontend
+    steps: 
+        - name: assume push test artifacts role
+          uses: aws-actions/configure-aws-credentials@v1
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: eu-central-1
+            role-to-assume: ${{ env.TEST_ROLE }}
+        - name: Retrieve artifact
+          uses: actions/download-artifact@v2
+          with:
+            name: dist-${{ github.run_number }}
+            path: dist        
+        - name: deploy dev frontend artifact
+          run: |
+            aws s3 sync dist s3://734590493808-euc1-frontend-assets/assets/modules/apt-frontend --delete --cache-control max-age=10
+            aws s3 sync dist s3://734590493808-use1-frontend-assets/assets/modules/apt-frontend --delete --cache-control max-age=10
+          
+
+  deploy-frontend-stage:
+    runs-on: ubuntu-20.04
+    timeout-minutes: 10
+    needs: build-frontend
+    steps: 
+        - name: assume push stage artifacts role
+          uses: aws-actions/configure-aws-credentials@v1
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: eu-central-1
+            role-to-assume: ${{ env.STAGE_ROLE }}
+        - name: Retrieve artifact
+          uses: actions/download-artifact@v2
+          with:
+            name: dist-${{ github.run_number }}
+            path: dist
+        - name: deploy dev frontend artifact
+          run: |
+            aws s3 sync dist s3://240680620468-euc1-frontend-assets/assets/modules/apt-frontend --delete --cache-control max-age=10
+            aws s3 sync dist s3://240680620468-use1-frontend-assets/assets/modules/apt-frontend --delete --cache-control max-age=10
+
+  deploy-frontend-prod:
+    runs-on: ubuntu-20.04
+    timeout-minutes: 10
+    needs: build-frontend
+    steps: 
+        - name: assume push prod artifacts role
+          uses: aws-actions/configure-aws-credentials@v1
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: eu-central-1
+            role-to-assume: ${{ env.PROD_ROLE }}
+        - name: Retrieve artifact
+          uses: actions/download-artifact@v2
+          with:
+            name: dist-${{ github.run_number }}
+            path: dist
+        - name: deploy dev frontend artifact
+          run: |
+            aws s3 sync dist s3://480309102926-euc1-frontend-assets/assets/modules/apt-frontend --delete --cache-control max-age=10
+            aws s3 sync dist s3://480309102926-use1-frontend-assets/assets/modules/apt-frontend --delete --cache-control max-age=10

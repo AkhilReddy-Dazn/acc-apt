@@ -1,0 +1,17 @@
+{
+  "name": "acc-apt",
+  "version": "0.0.1",
+  "description": "Ad Preview Tool",
+  "main": "index.js",
+  "license": "UNLICENSED",
+  "author": "DAZN",
+  "private": true,
+  "scripts": {
+
+  },
+  "workspaces":{
+    "packages": [
+    "apt-backend",
+    "apt-frontend"
+  ]}
+}
